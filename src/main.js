@@ -3,15 +3,19 @@ import * as THREE from 'three'
 import { addDefaultMeshes, addStandardMeshes } from './addDefaultMeshes'
 import { addLight } from './addLight'
 import Model from './model'
+import { manager } from './manager'
 
 const scene = new THREE.Scene()
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
 camera.position.set(0, 0, 5)
 const renderer = new THREE.WebGLRenderer({ antialias: true })
+
 const meshes = {}
 const lights = {}
 const mixers = []
+
 const clock = new THREE.Clock()
+const LoadingManager = manager()
 init()
 
 function init() {
@@ -41,6 +45,8 @@ function instances() {
     scale: new THREE.Vector3(2, 2, 2),
     position: new THREE.Vector3(0, -0.8, 3),
     animationState: true,
+    replace: true,
+    replaceURL: 'mat7.png',
     mixers: mixers,
   })
   flowers.init()
@@ -51,6 +57,11 @@ function animate() {
   for (const mixer of mixers) {
     mixer.update(delta)
   }
+
+  if (meshes.flower) {
+    meshes.flower.rotation.y += 0.01
+  }
+
   meshes.standard.rotation.x += 0.01
   meshes.standard.rotation.y += 0.01
   meshes.default.rotation.x += 0.01
