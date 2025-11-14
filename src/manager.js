@@ -1,9 +1,9 @@
 import { LoadingManager } from 'three';
 
 export function manager() {
-    const LoadingManager = new LoadingManager();
-    LoadingManager.onLoad = function () {
+    const loadingManager = new LoadingManager();
+    loadingManager.onLoad = function () {
         console.log('loaded!');
     }
-    return LoadingManager;
+    return loadingManager;
 }

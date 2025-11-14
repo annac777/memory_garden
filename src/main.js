@@ -48,6 +48,7 @@ function instances() {
     replace: true,
     replaceURL: 'mat7.png',
     mixers: mixers,
+    manager: LoadingManager,
   })
   flowers.init()
 }
