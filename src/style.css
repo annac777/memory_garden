@@ -1,10 +1,203 @@
-* {
+body {
   margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  overflow: hidden;
+  background: #000;
+  font-family: sans-serif;
 }
 
 canvas {
+  touch-action: none;
+  display: block;
   width: 100vw;
   height: 100vh;
+}
+
+/* 交互弹窗样式 */
+#info-box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.5);
+  /* Black background, 50% opacity */
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  width: 800px;
+  display: none;
+  z-index: 2000;
+  text-align: center;
+  color: #fff;
+  /* White text */
+  backdrop-filter: blur(10px);
+  /* Optional: Adds a glassmorphism effect for readability */
+  -webkit-backdrop-filter: blur(10px);
+  font-family: "Homemade Apple", cursive;
+  opacity: 0;
+  /* Hidden initially */
+  transition: opacity 0.5s ease-in-out;
+  /* Smooth fade in/out */
+}
+
+#info-box h3 {
+  margin-top: 0;
+  color: #fff;
+  /* White text */
+  font-family: "Homemade Apple", cursive;
+}
+
+#info-box p {
+  color: #eee;
+  /* Slightly off-white for body text softness */
+  line-height: 2.2;
+  /* Increased line-height for better readability without <br> */
+  font-weight: 400;
+  font-size: 20px;
+  /* Cursive fonts usually need to be slightly larger to be legible */
+  font-family: "Homemade Apple", cursive;
+}
+
+#close-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  cursor: pointer;
+  font-weight: 300;
+  /* Lighter weight looks more elegant */
+  color: #ccc;
+  font-size: 32px;
+  /* Bigger size */
+  line-height: 1;
+  padding: 5px;
+  /* Bigger hit area */
+  transition: color 0.2s;
+}
+
+#close-btn:hover {
+  color: #fff;
+}
+
+/* 上传提示 */
+#upload-hint {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  font-size: 14px;
+  text-align: center;
+  width: 100%;
+  z-index: 1000;
+  opacity: 0;
+  /* Hidden initially */
+  transition: opacity 2s ease-in-out;
+}
+
+/* 坐标显示 */
+#coords-display {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0;
+  /* Hidden initially */
+  transition: opacity 2s ease-in-out;
+}
+
+/* 拖拽上传覆盖层 */
+.drop-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  z-index: 3000;
+  pointer-events: none;
+}
+
+.drop-overlay.active {
+  display: flex;
+}
+
+.drop-box {
+  border: 2px dashed #fff;
+  padding: 40px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+/* Loading Screen */
+#loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  /* Increased z-index to ensure it's on top of everything */
+  /* transition: opacity 0.5s ease; Removed to avoid conflict with JS animation loop */
+}
+
+#loading-text {
+  color: white;
+  margin-top: 20px;
+  font-family: "Homemade Apple", cursive;
+  font-size: 24px;
+}
+
+/* Title Styling */
+#site-title {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: "Homemade Apple", cursive;
+  font-size: 20px;
+  z-index: 1000;
+  pointer-events: none;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  /* Start invisible */
+  transition: opacity 2s ease-in-out;
+  /* Smooth transition */
+}
+
+/* Simple Spinner */
+.loader {
+  border: 4px solid #333;
+  border-top: 4px solid #fff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }

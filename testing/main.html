@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory Garden</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Homemade+Apple&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
+    rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+      font-family: sans-serif;
+    }
+
+    canvas {
+      touch-action: none;
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* 交互弹窗样式 */
+    #info-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.5);
+      /* Black background, 50% opacity */
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      width: 800px;
+      display: none;
+      z-index: 2000;
+      text-align: center;
+      color: #fff;
+      /* White text */
+      backdrop-filter: blur(10px);
+      /* Optional: Adds a glassmorphism effect for readability */
+      -webkit-backdrop-filter: blur(10px);
+      font-family: "Homemade Apple", cursive;
+      opacity: 0;
+      /* Hidden initially */
+      transition: opacity 0.5s ease-in-out;
+      /* Smooth fade in/out */
+    }
+
+    #info-box h3 {
+      margin-top: 0;
+      color: #fff;
+      /* White text */
+      font-family: "Homemade Apple", cursive;
+    }
+
+    #info-box p {
+      color: #eee;
+      /* Slightly off-white for body text softness */
+      line-height: 2.2;
+      /* Increased line-height for better readability without <br> */
+      font-weight: 400;
+      font-size: 20px;
+      /* Cursive fonts usually need to be slightly larger to be legible */
+      font-family: "Homemade Apple", cursive;
+    }
+
+    #close-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      cursor: pointer;
+      font-weight: 300;
+      /* Lighter weight looks more elegant */
+      color: #ccc;
+      font-size: 32px;
+      /* Bigger size */
+      line-height: 1;
+      padding: 5px;
+      /* Bigger hit area */
+      transition: color 0.2s;
+    }
+
+    #close-btn:hover {
+      color: #fff;
+    }
+
+    /* 上传提示 */
+    #upload-hint {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.5);
+      pointer-events: none;
+      font-size: 14px;
+      text-align: center;
+      width: 100%;
+      z-index: 1000;
+      opacity: 0;
+      /* Hidden initially */
+      transition: opacity 2s ease-in-out;
+    }
+
+    /* 坐标显示 */
+    #coords-display {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      color: rgba(255, 255, 255, 0.8);
+      font-family: monospace;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0;
+      /* Hidden initially */
+      transition: opacity 2s ease-in-out;
+    }
+
+    /* 拖拽上传覆盖层 */
+    .drop-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      z-index: 3000;
+      pointer-events: none;
+    }
+
+    .drop-overlay.active {
+      display: flex;
+    }
+
+    .drop-box {
+      border: 2px dashed #fff;
+      padding: 40px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+    }
+
+    /* Loading Screen */
+    #loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      /* Increased z-index to ensure it's on top of everything */
+      /* transition: opacity 0.5s ease; Removed to avoid conflict with JS animation loop */
+    }
+
+    #loading-text {
+      color: white;
+      margin-top: 20px;
+      font-family: "Homemade Apple", cursive;
+      font-size: 24px;
+    }
+
+    /* Title Styling */
+    #site-title {
+      position: absolute;
+      top: 30px;
+      right: 40px;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.7);
+      font-family: "Homemade Apple", cursive;
+      font-size: 20px;
+      z-index: 1000;
+      pointer-events: none;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      /* Start invisible */
+      transition: opacity 2s ease-in-out;
+      /* Smooth transition */
+    }
+
+    /* Simple Spinner */
+    .loader {
+      border: 4px solid #333;
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Background Music -->
+  <audio id="bg-music" loop preload="auto">
+    <source src="/audio/Whispered%20Shadows.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Sound Effects -->
+  <audio id="sfx-click" preload="auto">
+    <source src="/audio/Clicking.MP3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-bird" loop preload="auto">
+    <source src="/audio/Bird.MP3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-buzzing" preload="auto">
+    <source src="/audio/Buzzing.MP3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-typing" loop preload="auto">
+    <source src="/audio/Typing.MP3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-cricket" loop preload="auto">
+    <source src="/audio/Cricket.MP3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-brook" loop preload="auto">
+    <source src="/audio/Brook.MP3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-rain" loop preload="auto">
+    <source src="/audio/Rain.MP3" type="audio/mpeg">
+  </audio>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay">
+    <div class="loader"></div>
+    <div id="loading-text">Loading...</div>
+  </div>
+
+  <!-- Site Title -->
+  <h1 id="site-title">Memory Garden</h1>
+
+  <!-- 交互弹窗 -->
+  <div id="info-box">
+    <div id="close-btn">&times;</div>
+    <h3 id="info-title">Title</h3>
+    <p id="info-content">Content goes here...</p>
+  </div>
+
+  <div id="upload-hint">Scroll to Zoom | Left Click to Rotate | Right Click to Pan | WASD to Move</div>
+  <div id="coords-display">Camera: 0.00, 0.00, 0.00</div>
+
+  <div class="drop-overlay" id="drop-overlay">
+    <div class="drop-box">Drop File Here</div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/node_modules/three/build/three.module.js",
+        "three/addons/": "/node_modules/three/examples/jsm/",
+        "lil-gui": "/node_modules/lil-gui/dist/lil-gui.esm.min.js",
+        "@sparkjsdev/spark": "/node_modules/@sparkjsdev/spark/dist/spark.module.js"
+      }
+    }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { SplatMesh, dyno } from '@sparkjsdev/spark';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { DragControls } from 'three/addons/controls/DragControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { AnimationMixer } from 'three';
+    import GUI from 'lil-gui';
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+    // Note: addLight logic is manually inlined or simpler here since we can't easily import relative paths without full structure
+    // But since we want "sync", we'll skip the external import and just inline the logic if needed or assume defaults.
+    // However, user asked to sync changes. The main.js has specific light logic.
+
+    // 初始化相机位置
+    camera.position.set(0, 2, 3.5);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // === 控制器设置 (OrbitControls + WASD) ===
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = true;
+    controls.enablePan = true;
+    controls.minDistance = 0.1;
+    controls.maxDistance = 50;
+    controls.autoRotate = false;
+    controls.autoRotateSpeed = 1.0;
+
+    // 初始化位置
+    camera.position.set(0.01, 0.71, 0.68);
+
+    // Calculate target to match rotation
+    const pitch = THREE.MathUtils.degToRad(-32);
+    const yaw = THREE.MathUtils.degToRad(-46);
+    const roll = THREE.MathUtils.degToRad(-24);
+    camera.rotation.set(pitch, yaw, roll);
+
+    const forward = new THREE.Vector3(0, 0, -1);
+    forward.applyEuler(camera.rotation).normalize();
+    const target = camera.position.clone().add(forward.multiplyScalar(1.0));
+    controls.target.copy(target);
+    controls.update();
+
+    // WASD Movement Logic
+    const moveSpeed = 0.01;
+    const keyState = {};
+    window.addEventListener('keydown', (e) => keyState[e.code] = true);
+    window.addEventListener('keyup', (e) => keyState[e.code] = false);
+
+    function updateCameraMovement() {
+      const forward = new THREE.Vector3();
+      camera.getWorldDirection(forward);
+      forward.y = 0;
+      forward.normalize();
+
+      const right = new THREE.Vector3();
+      right.crossVectors(forward, camera.up).normalize();
+
+      if (keyState['KeyW']) {
+        camera.position.addScaledVector(forward, moveSpeed);
+        controls.target.addScaledVector(forward, moveSpeed);
+      }
+      if (keyState['KeyS']) {
+        camera.position.addScaledVector(forward, -moveSpeed);
+        controls.target.addScaledVector(forward, -moveSpeed);
+      }
+      if (keyState['KeyA']) {
+        camera.position.addScaledVector(right, -moveSpeed);
+        controls.target.addScaledVector(right, -moveSpeed);
+      }
+      if (keyState['KeyD']) {
+        camera.position.addScaledVector(right, moveSpeed);
+        controls.target.addScaledVector(right, moveSpeed);
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // 动画变量
+    const animateT = dyno.dynoFloat(0);
+    let baseTime = 0;
+    let splatLoaded = false;
+    let splatMesh = null;
+    let catModel = null;
+    let butterflyModel = null;
+    const mixers = []; // For GLB animations
+    const clock = new THREE.Clock(); // For animation updates
+
+    // 特效配置
+    const effectParams = {
+      effect: "Magic"
+    };
+
+    // === 额外模型加载 (Restored Cat & Butterfly) ===
+    const gltfLoader = new GLTFLoader();
+
+    // Load Cat
+    gltfLoader.load('/cat.glb', (gltf) => {
+      const model = gltf.scene;
+      model.name = "Cat";
+      model.position.set(0.49, 0.05, 0.36);
+      model.scale.set(0.01, 0.01, 0.01);
+      model.rotation.set(0, Math.PI, -0.1);
+
+      // Setup specialized lighting for the Cat (Right side only)
+      const spotLight = new THREE.SpotLight(0xffffff, 5);
+      spotLight.position.set(-2, 0.5, 0.36);
+      spotLight.target = model;
+      spotLight.angle = Math.PI / 6;
+      spotLight.penumbra = 0.5;
+      spotLight.decay = 2;
+      spotLight.distance = 50;
+
+      // Use layers to isolate light to Cat only
+      model.traverse((child) => {
+        if (child.isMesh) {
+          child.layers.enable(1);
+          child.layers.disable(0);
+        }
+      });
+
+      // We need the camera to see layer 1 as well
+      camera.layers.enable(1);
+
+      // Set light to layer 1 only
+      spotLight.layers.set(1);
+
+      scene.add(spotLight);
+      scene.add(model);
+      catModel = model;
+
+      if (gltf.animations.length > 0) {
+        const mixer = new AnimationMixer(model);
+        gltf.animations.forEach((clip) => {
+          mixer.clipAction(clip).play();
+        });
+        mixers.push(mixer);
+      }
+    });
+
+    // Load Butterfly
+    gltfLoader.load('/animated_butterfly.glb', (gltf) => {
+      const model = gltf.scene;
+      model.name = "Butterfly";
+      model.position.set(0.73, 0.5, -0.064);
+      model.scale.set(0.02, 0.02, 0.02);
+      model.rotation.set(0, Math.PI / 4, 0);
+
+      // Set initial opacity to 0
+      model.visible = false; // Hide initially
+      model.traverse((child) => {
+        if (child.isMesh) {
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material = child.material.map(m => {
+                const mc = m.clone();
+                mc.transparent = true;
+                mc.opacity = 0;
+                return mc;
+              });
+            } else {
+              child.material = child.material.clone();
+              child.material.transparent = true;
+              child.material.opacity = 0;
+            }
+          }
+        }
+      });
+
+      scene.add(model);
+      butterflyModel = model;
+
+      if (gltf.animations.length > 0) {
+        const mixer = new AnimationMixer(model);
+        gltf.animations.forEach((clip) => {
+          mixer.clipAction(clip).play();
+        });
+        mixers.push(mixer);
+      }
+    });
+
+    // === 交互热点逻辑 ===
+    const HOTSPOTS = [
+      {
+        position: { x: 0.49, y: 0.32, z: -0.20 },
+        title: "Birdbloom",
+        content: "“A pale rose trembles softly in the breeze as distant birdsong echoes like a memory returning.”",
+        audioId: "sfx-bird",
+        loop: true
+      },
+      {
+        position: { x: 0.74, y: 0.42, z: 0.05 },
+        title: "Broken Node",
+        content: "“The half-broken computer crackles softly, as if a memory is trying to load but can never quite form.”",
+        audioId: "sfx-buzzing",
+        loop: false
+      },
+      {
+        position: { x: 0.69, y: 0.31, z: 0.08 },
+        title: "Glyph",
+        content: "“From the shattered keys comes a faint tapping, as if someone is still typing inside a memory.”",
+        audioId: "sfx-typing",
+        loop: true
+      },
+      {
+        position: { x: 0.20, y: 0.11, z: -0.22 },
+        title: "Rootflow",
+        content: "“A soft trickle echoes beneath the roots, like a memory flowing quietly underground.”",
+        audioId: "sfx-brook",
+        loop: true
+      },
+      {
+        position: { x: 0.68, y: 0.45, z: 0.76 },
+        title: "Nightbloom",
+        content: "“The roses hiding in the shadows glisten with rain, like memories that have just finished crying.”",
+        audioId: "sfx-rain",
+        loop: true
+      },
+      {
+        position: { x: 0.36, y: 0.50, z: -1.20 },
+        title: "Frogfall",
+        content: "“In the distant darkness, a single frog call echoes through the void.”",
+        audioId: "sfx-cricket",
+        loop: true
+      }
+    ];
+
+    let hotspotGroup = new THREE.Group();
+    scene.add(hotspotGroup);
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let interactables = [];
+
+    function updateHotspots() {
+      while (hotspotGroup.children.length > 0) {
+        hotspotGroup.remove(hotspotGroup.children[0]);
+      }
+      interactables = [];
+
+      HOTSPOTS.forEach((data) => {
+        const container = new THREE.Group();
+        container.position.set(data.position.x, data.position.y, data.position.z);
+        container.userData = { ...data };
+
+        // 1. Visible Sphere (Small)
+        const geometryVis = new THREE.SphereGeometry(0.005, 16, 16);
+        const materialVis = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0,
+          depthTest: false,
+          depthWrite: false
+        });
+        const meshVis = new THREE.Mesh(geometryVis, materialVis);
+        meshVis.renderOrder = 999;
+        container.add(meshVis);
+
+        // 2. Hit Sphere (Larger, Invisible but interactable)
+        const geometryHit = new THREE.SphereGeometry(0.03, 16, 16);
+        const materialHit = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0,
+          depthTest: false,
+          depthWrite: false
+        });
+        const meshHit = new THREE.Mesh(geometryHit, materialHit);
+        meshHit.renderOrder = 998;
+        meshHit.userData = { parentGroup: container };
+        container.add(meshHit);
+
+        hotspotGroup.add(container);
+        interactables.push(meshHit);
+      });
+    }
+    updateHotspots();
+
+    // === 点击逻辑 ===
+    const mouseDownPos = new THREE.Vector2();
+
+    window.addEventListener('pointerdown', (event) => {
+      mouseDownPos.set(event.clientX, event.clientY);
+    });
+
+    window.addEventListener('pointerup', (event) => {
+      const moveDistance = Math.hypot(
+        event.clientX - mouseDownPos.x,
+        event.clientY - mouseDownPos.y
+      );
+
+      const isClick = moveDistance < 5;
+
+      if (!isClick) return;
+
+      if (event.target.closest('#info-box')) return;
+
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+
+      const intersects = raycaster.intersectObjects(interactables);
+      if (intersects.length > 0) {
+        const hitObj = intersects[0].object;
+        const container = hitObj.userData.parentGroup;
+        const data = container.userData;
+
+        console.log("Clicked Hotspot Data:", data);
+
+        playClickSound();
+
+        const infoTitle = document.getElementById('info-title');
+        const infoContent = document.getElementById('info-content');
+
+        if (infoTitle) {
+          infoTitle.style.display = 'block';
+          infoTitle.innerText = data.title || "Unknown Location";
+        }
+        if (infoContent) {
+          infoContent.innerText = data.content;
+        }
+
+        const infoBox = document.getElementById('info-box');
+        infoBox.style.display = 'block';
+        infoBox.offsetHeight;
+        infoBox.style.opacity = '1';
+
+        if (data.audioId) {
+          playAmbientSound(data.audioId, data.loop);
+        }
+
+      } else {
+        playClickSound();
+        closeInfoBox();
+      }
+    });
+
+    function closeInfoBox() {
+      const infoBox = document.getElementById('info-box');
+      if (infoBox && infoBox.style.display !== 'none') {
+        infoBox.style.opacity = '0';
+        stopAmbientSound();
+        setTimeout(() => {
+          infoBox.style.display = 'none';
+        }, 500);
+      }
+    }
+
+    const closeBtn = document.getElementById('close-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        playClickSound();
+        closeInfoBox();
+      });
+    }
+
+    // === Audio Setup ===
+    // (Helper functions defined globally above for simplicity in HTML)
+
+    // === 加载模型逻辑 ===
+    // (Defined globally above)
+
+    // === 特效 Shader 逻辑 ===
+    // (Defined globally above)
+
+    // === Viewpoints Logic ===
+    const viewpoints = {
+      'Default': { pos: [0.01, 0.71, 0.68], target: null },
+      'Top Down': { pos: [0, 3, 0], target: [0, 0, 0] },
+      'Front': { pos: [0, 0, 3], target: [0, 0, 0] }
+    };
+
+    viewpoints['Default'].target = target.toArray();
+
+    const viewpointParams = {
+      currentView: 'Default',
+      saveToConsole: () => {
+        const pos = camera.position.toArray().map(v => Number(v.toFixed(3)));
+        const target = controls.target.toArray().map(v => Number(v.toFixed(3)));
+        const rot = [
+          THREE.MathUtils.radToDeg(camera.rotation.x),
+          THREE.MathUtils.radToDeg(camera.rotation.y),
+          THREE.MathUtils.radToDeg(camera.rotation.z)
+        ].map(v => Number(v.toFixed(1)));
+
+        console.log(`Position: [${pos.join(', ')}]`);
+        console.log(`Target: [${target.join(', ')}]`);
+        console.log(`Rotation (Deg): [${rot.join(', ')}]`);
+        alert(`Check Console (F12) for view data!\nPos: ${pos}\nTarget: ${target}`);
+      }
+    };
+
+    function setViewpoint(name) {
+      if (viewpoints[name]) {
+        const v = viewpoints[name];
+        camera.position.set(...v.pos);
+        controls.target.set(...v.target);
+        controls.update();
+      }
+    }
+
+    // === 拖拽上传逻辑 ===
+    const dropOverlay = document.getElementById('drop-overlay');
+    if (dropOverlay) {
+      window.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropOverlay.classList.add('active');
+      });
+      window.addEventListener('dragleave', (e) => {
+        if (e.target === dropOverlay) dropOverlay.classList.remove('active');
+      });
+      window.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dropOverlay.classList.remove('active');
+        if (e.dataTransfer.files.length > 0) {
+          const file = e.dataTransfer.files[0];
+          const buffer = await file.arrayBuffer();
+          loadSplat(new Uint8Array(buffer), true);
+        }
+      });
+    }
+
+    // === 启动 ===
+    // Load 'testing.ply' from root (public folder) - Note: Adjust path if needed, assuming server root is project root
+    fetch('/testing.ply', { method: 'HEAD' })
+      .then(res => {
+        if (res.ok) loadSplat('/testing.ply');
+        else {
+          console.warn("testing.ply not found, loading example model...");
+          loadSplat('https://sparkjs.dev/examples/assets/splats/primerib-tamos.spz');
+        }
+      })
+      .catch(() => loadSplat('https://sparkjs.dev/examples/assets/splats/primerib-tamos.spz'));
+
+    // 渲染循环
+    const coordsDisplay = document.getElementById('coords-display');
+    let uiFadedIn = false;
+
+    renderer.setAnimationLoop((time) => {
+      updateCameraMovement();
+
+      const delta = clock.getDelta();
+      mixers.forEach(mixer => mixer.update(delta));
+
+      if (splatLoaded) {
+        baseTime += 1 / 60;
+        animateT.value = baseTime;
+
+        if (baseTime > 4.5) {
+          if (loadingOverlay && loadingOverlay.style.opacity !== '0' && loadingOverlay.style.display !== 'none') {
+            const fadeDuration = 4.0;
+            const opacity = Math.max(0, 1.0 - (baseTime - 4.5) / fadeDuration);
+            loadingOverlay.style.opacity = opacity.toString();
+
+            if (opacity <= 0.001) {
+              loadingOverlay.style.opacity = '0';
+              loadingOverlay.style.pointerEvents = 'none';
+              setTimeout(() => {
+                loadingOverlay.style.display = 'none';
+              }, 100);
+            }
+          }
+        }
+
+        if (baseTime > 12.0) {
+          if (!uiFadedIn) {
+            if (document.getElementById('site-title')) document.getElementById('site-title').style.opacity = '1';
+            if (document.getElementById('coords-display')) document.getElementById('coords-display').style.opacity = '1';
+            if (document.getElementById('upload-hint')) document.getElementById('upload-hint').style.opacity = '1';
+            uiFadedIn = true;
+          }
+
+          hotspotGroup.children.forEach(container => {
+            const visMesh = container.children[0];
+            if (visMesh && visMesh.material.opacity < 1.0) {
+              visMesh.material.opacity += 0.01;
+            }
+          });
+
+          if (butterflyModel) {
+            butterflyModel.visible = true;
+            butterflyModel.traverse(child => {
+              if (child.isMesh) {
+                if (Array.isArray(child.material)) {
+                  child.material.forEach(m => {
+                    if (m.opacity < 1.0) m.opacity += 0.005;
+                  });
+                } else if (child.material && child.material.opacity < 1.0) {
+                  child.material.opacity += 0.005;
+                }
+              }
+            });
+          }
+        }
+      }
+
+      if (splatMesh) splatMesh.updateVersion();
+
+      controls.update();
+
+      if (coordsDisplay) {
+        const { x, y, z } = camera.position;
+        const rotX = THREE.MathUtils.radToDeg(camera.rotation.x).toFixed(1);
+        const rotY = THREE.MathUtils.radToDeg(camera.rotation.y).toFixed(1);
+        const rotZ = THREE.MathUtils.radToDeg(camera.rotation.z).toFixed(1);
+
+        coordsDisplay.innerHTML = `
+            Pos: ${x.toFixed(2)}, ${y.toFixed(2)}, ${z.toFixed(2)}<br>
+            Rot: ${rotX}°, ${rotY}°, ${rotZ}°
+        `;
+      }
+
+      renderer.render(scene, camera);
+    });
+  </script>
+</body>
+
+</html>

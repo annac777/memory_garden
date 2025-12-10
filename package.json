@@ -12,6 +12,8 @@
     "vite": "^7.1.7"
   },
   "dependencies": {
+    "@sparkjsdev/spark": "^0.1.10",
+    "lil-gui": "^0.21.0",
     "three": "^0.180.0"
   }
 }

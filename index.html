@@ -1,13 +1,82 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>threejs</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory Garden</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Homemade+Apple&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
+    rel="stylesheet">
+
+  <script type="importmap">
+    {
+        "imports": {
+            "three": "/node_modules/three/build/three.module.js",
+            "three/addons/": "/node_modules/three/examples/jsm/",
+            "lil-gui": "/node_modules/lil-gui/dist/lil-gui.esm.min.js",
+            "@sparkjsdev/spark": "/node_modules/@sparkjsdev/spark/dist/spark.module.js"
+        }
+    }
+  </script>
+</head>
+
+<body>
+  <!-- Background Music -->
+  <audio id="bg-music" loop preload="auto">
+    <source src="/audio/Whispered%20Shadows.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Sound Effects -->
+  <audio id="sfx-click" preload="auto">
+    <source src="/audio/Clicking.MP3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-bird" loop preload="auto">
+    <source src="/audio/Bird.MP3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-buzzing" preload="auto">
+    <source src="/audio/Buzzing.MP3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-typing" loop preload="auto">
+    <source src="/audio/Typing.MP3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-cricket" loop preload="auto">
+    <source src="/audio/Cricket.MP3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-brook" loop preload="auto">
+    <source src="/audio/Brook.MP3" type="audio/mpeg">
+  </audio>
+  <audio id="sfx-rain" loop preload="auto">
+    <source src="/audio/Rain.MP3" type="audio/mpeg">
+  </audio>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay">
+    <div class="loader"></div>
+    <div id="loading-text">Loading...</div>
+  </div>
+
+  <!-- Site Title -->
+  <h1 id="site-title">Memory Garden</h1>
+
+  <!-- 交互弹窗 -->
+  <div id="info-box">
+    <div id="close-btn">&times;</div>
+    <h3 id="info-title">Title</h3>
+    <p id="info-content">Content goes here...</p>
+  </div>
+
+  <div id="upload-hint">Scroll to Zoom | Left Click to Rotate | Right Click to Pan | WASD to Move</div>
+  <div id="coords-display">Camera: 0.00, 0.00, 0.00</div>
+  <div class="drop-overlay" id="drop-overlay">
+    <div class="drop-box">Drop File Here</div>
+  </div>
+
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
 </html>
