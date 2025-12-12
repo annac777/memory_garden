@@ -9,12 +9,9 @@ import { AnimationMixer } from 'three'
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-// Initial Camera Position
-camera.position.set(0.01, 0.71, 0.68);
-const pitch = THREE.MathUtils.degToRad(-32);
-const yaw = THREE.MathUtils.degToRad(-46);
-const roll = THREE.MathUtils.degToRad(-24);
-camera.rotation.set(pitch, yaw, roll);
+// 初始化相机位置 (恢复旧的初始设置)
+camera.position.set(0, 2, 3.5);
+camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -29,8 +26,17 @@ controls.enablePan = true;
 controls.minDistance = 0.1;
 controls.maxDistance = 50;
 controls.autoRotate = false;
+controls.autoRotateSpeed = 1.0; // Restored
 
-// Calculate target based on rotation
+// 初始化位置 (覆盖上面的设置，恢复你的特定视角)
+camera.position.set(0.01, 0.71, 0.68);
+
+// Calculate target to match rotation
+const pitch = THREE.MathUtils.degToRad(-32);
+const yaw = THREE.MathUtils.degToRad(-46);
+const roll = THREE.MathUtils.degToRad(-24);
+camera.rotation.set(pitch, yaw, roll);
+
 const forward = new THREE.Vector3(0, 0, -1);
 forward.applyEuler(camera.rotation).normalize();
 const target = camera.position.clone().add(forward.multiplyScalar(1.0));
