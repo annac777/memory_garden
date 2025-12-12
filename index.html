@@ -8,9 +8,9 @@
   <title>Memory Garden</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Homemade+Apple&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap"
+  <link href="https://fonts.googleapis.com/css2?family=Homemade+Apple&family=Shadows+Into+Light&display=swap"
     rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
   <script type="importmap">
     {
@@ -69,6 +69,83 @@
     <p id="info-content">Content goes here...</p>
   </div>
 
+  <!-- Documentation Modal -->
+  <div id="doc-modal">
+    <div id="close-doc-btn">&times;</div>
+    <div class="doc-content">
+      <h2>Documentation</h2>
+
+      <h3>Inspiration</h3>
+      <p>The earliest spark for Memory Garden came from the idea of dreamcore—a quiet, empty, slightly unreal world that
+        feels detached from time. I wanted to create a personal space of my own: peaceful, gentle, and free, yet
+        carrying a faint sense of mystery and the slow drifting of time.</p>
+
+      <!-- Dreamcore Image Grid -->
+      <div class="image-gallery">
+        <div class="gallery-item"><img src="/dreamcore1.png" alt="Dreamcore Inspiration 1"
+            onclick="openImageModal(this.src)"></div>
+        <div class="gallery-item"><img src="/dreamcore2.png" alt="Dreamcore Inspiration 2"
+            onclick="openImageModal(this.src)"></div>
+        <div class="gallery-item"><img src="/dreamcore3.png" alt="Dreamcore Inspiration 3"
+            onclick="openImageModal(this.src)"></div>
+        <p class="gallery-caption">Dreamcore aesthetics: empty, liminal, and detached from time.</p>
+      </div>
+
+      <p>I’ve always been drawn to that soft, floating feeling, the kind that makes a place feel familiar even when it
+        shouldn’t exist. At the same time, I kept wondering: we create so much technology—worlds, tools, systems—but
+        what happens to all of it when we are no longer here?</p>
+      <p>Eventually, that thought crystallized into the image of a broken computer resting inside a deep forest, slowly
+        being reclaimed by nature. A world where technology survives not as a machine, but as memory.</p>
+      <p>Memory Garden grew from that image.</p>
+
+      <h3>Process & Timeline</h3>
+      <p>After the initial sketches, I began searching for a way to transform this imagined world into a real 3D space.
+        Building everything in Blender wasn’t feasible within my timeframe, so I turned to 3D Gaussian Splatting. Around
+        the same time, I discovered Marble, a tool capable of turning a single image into a 3DGS scene.</p>
+      <p>I spent days iterating through image concepts using ChatGPT and Midjourney, refining mood, lighting,
+        composition, and emotional tone until one version finally matched the world I had been imagining. Marble then
+        transformed that image into a 3D splat scene—dense, atmospheric, and strangely alive.</p>
+
+      <!-- Ideation Image Grid -->
+      <div class="image-gallery">
+        <div class="gallery-item"><img src="/Ideation1.png" alt="Ideation 1" onclick="openImageModal(this.src)"></div>
+        <div class="gallery-item"><img src="/Ideation2.png" alt="Ideation 2" onclick="openImageModal(this.src)"></div>
+        <div class="gallery-item"><img src="/Ideation3.png" alt="Ideation 3" onclick="openImageModal(this.src)"></div>
+        <div class="gallery-item"><img src="/Ideation4.png" alt="Ideation 4" onclick="openImageModal(this.src)"></div>
+        <div class="gallery-item"><img src="/Ideation5.png" alt="Ideation 5" onclick="openImageModal(this.src)"></div>
+        <div class="gallery-item"><img src="/Ideation6.png" alt="Ideation 6" onclick="openImageModal(this.src)"></div>
+        <p class="gallery-caption">Evolution of the visual concept through iterations.</p>
+      </div>
+
+      <p>The hardest part came next: integrating this 3DGS file with Three.js. It took many attempts and dead ends
+        before I eventually found Spark’s renderer, which made it possible to load, navigate, and experience the scene
+        directly in the browser.</p>
+      <p>Once the environment existed, even in its earliest form, the storytelling began to grow. I wrote narrative
+        fragments and placed them around the world, added a butterfly and a small cat as quiet inhabitants, and
+        introduced floating orbs that hold pieces of meaning. These scattered elements act like small memories waiting
+        to be uncovered.</p>
+      <p>Memory Garden became a hybrid creation—part AI-generated, part hand-crafted, part engineered, and entirely
+        shaped by intuition.</p>
+
+      <h3>What People Can Do in This Space</h3>
+      <p>This world is meant to be explored slowly. It has no objectives, no puzzles, no predefined route—only
+        sensations, fragments, and impressions.</p>
+      <p>Visitors can move through the garden at their own pace, approach the memory points, and interact with the
+        floating orbs that reveal pieces of the world’s story. They may notice the butterfly drifting between splines,
+        or the quiet cat resting near the overgrown computer, or the keys scattered like broken thoughts. The
+        half-destroyed machine, the roses touched by unseen rain, the sound of birds, trickling water, distant frogs,
+        and faint electronic static all contribute to an atmosphere that invites reflection rather than action.</p>
+      <p>This space does not explain itself. It simply holds what remains.</p>
+
+      <h3>Next Steps</h3>
+      <p>Memory Garden is only the beginning of what this world might one day become. I hope to continue expanding
+        it—perhaps by rebuilding parts of the scene in Blender for higher fidelity, or by merging multiple 3DGS
+        environments into a wider landscape. There are interactions I still want to create, sounds to refine, narratives
+        to deepen, and new corners of the world that have not yet been grown.</p>
+      <p>This garden does not belong to any single timeline or reality.</p>
+    </div>
+  </div>
+
   <div id="upload-hint">Scroll to Zoom | Left Click to Rotate | Right Click to Pan | WASD to Move</div>
   <div id="coords-display">Camera: 0.00, 0.00, 0.00</div>
   <div class="drop-overlay" id="drop-overlay">
@@ -76,7 +153,33 @@
   </div>
 
   <div id="app"></div>
+
+  <!-- Image Modal -->
+  <div id="image-modal" onclick="closeImageModal()">
+    <span class="close-image">&times;</span>
+    <img class="modal-content" id="modal-img">
+  </div>
+
   <script type="module" src="/src/main.js"></script>
+  <script>
+    function openImageModal(src) {
+      const modal = document.getElementById('image-modal');
+      const modalImg = document.getElementById('modal-img');
+      modal.style.display = "flex";
+      modalImg.src = src;
+      // Trigger reflow
+      modal.offsetHeight;
+      modal.classList.add('active');
+    }
+
+    function closeImageModal() {
+      const modal = document.getElementById('image-modal');
+      modal.classList.remove('active');
+      setTimeout(() => {
+        modal.style.display = "none";
+      }, 300);
+    }
+  </script>
 </body>
 
 </html>

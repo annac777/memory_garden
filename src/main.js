@@ -96,6 +96,7 @@ let baseTime = 0;
 let splatLoaded = false;
 let splatMesh = null;
 let catModel = null;
+let catHitSphere = null; // Debug hit sphere
 let butterflyModel = null;
 const mixers = []; // For GLB animations
 const clock = new THREE.Clock(); // For animation updates
@@ -118,26 +119,22 @@ gltfLoader.load('cat.glb', (gltf) => {
   model.scale.set(0.008, 0.008, 0.008);
   model.rotation.set(0, 0, 0.05); // Rotate 180 deg to face camera if needed
 
-  // Enable interaction visuals
-  // model.visible = false; // Cat visible immediately
-  // model.traverse((child) => {
-  //   if (child.isMesh) {
-  //     if (child.material) {
-  //       if (Array.isArray(child.material)) {
-  //         child.material = child.material.map(m => {
-  //           const mc = m.clone();
-  //           // mc.transparent = true;
-  //           // mc.opacity = 0;
-  //           return mc;
-  //         });
-  //       } else {
-  //         child.material = child.material.clone();
-  //         // child.material.transparent = true;
-  //         // child.material.opacity = 0; 
-  //       }
-  //     }
-  //   }
-  // });
+  // Create Interaction Hit Sphere (Visible for debugging)
+  const geometryHit = new THREE.SphereGeometry(0.06, 16, 16);
+  const materialHit = new THREE.MeshBasicMaterial({
+    color: 0xff0000,     // Red
+    transparent: true,
+    opacity: 0,        // Fully transparent (Invisible)
+    depthTest: false     // Always visible on top
+  });
+  catHitSphere = new THREE.Mesh(geometryHit, materialHit);
+  // Match cat position exactly
+  catHitSphere.position.copy(model.position);
+  // Move it up slightly to cover the body
+  catHitSphere.position.y += 0.06;
+
+  catHitSphere.renderOrder = 1000;
+  scene.add(catHitSphere);
 
   // Setup specialized lighting for the Cat (Right side only)
   const spotLight = new THREE.SpotLight(0xffffff, 10); // Reduced intensity from 50 to 5
@@ -231,42 +228,42 @@ const HOTSPOTS = [
   {
     position: { x: 0.49, y: 0.32, z: -0.20 },
     title: "Birdbloom",
-    content: "“A pale rose trembles softly in the breeze as distant birdsong echoes like a memory returning.”",
+    content: "A pale rose trembles softly in the breeze as distant birdsong echoes like a memory returning.",
     audioId: "sfx-bird",
     loop: true
   },
   {
     position: { x: 0.74, y: 0.42, z: 0.05 },
     title: "Broken Node",
-    content: "“The half-broken computer crackles softly, as if a memory is trying to load but can never quite form.”",
+    content: "The half-broken computer crackles softly, as if a memory is trying to load but can never quite form.",
     audioId: "sfx-buzzing",
     loop: false
   },
   {
     position: { x: 0.69, y: 0.31, z: 0.08 },
     title: "Glyph",
-    content: "“From the shattered keys comes a faint tapping, as if someone is still typing inside a memory.”",
+    content: "From the shattered keys comes a faint tapping, as if someone is still typing inside a memory.",
     audioId: "sfx-typing",
     loop: true
   },
   {
     position: { x: 0.20, y: 0.11, z: -0.22 },
     title: "Rootflow",
-    content: "“A soft trickle echoes beneath the roots, like a memory flowing quietly underground.”",
+    content: "A soft trickle echoes beneath the roots, like a memory flowing quietly underground.",
     audioId: "sfx-brook",
     loop: true
   },
   {
     position: { x: 0.68, y: 0.45, z: 0.76 },
     title: "Nightbloom",
-    content: "“The roses hiding in the shadows glisten with rain, like memories that have just finished crying.”",
+    content: "The roses hiding in the shadows glisten with rain, like memories that have just finished crying.",
     audioId: "sfx-rain",
     loop: true
   },
   {
     position: { x: 0.36, y: 0.50, z: -1.20 },
     title: "Frogfall",
-    content: "“In the distant darkness, a single frog call echoes through the void.”",
+    content: "In the distant darkness, a single frog call echoes through the void.",
     audioId: "sfx-cricket",
     loop: true
   }
@@ -324,6 +321,92 @@ function updateHotspots() {
 }
 updateHotspots();
 
+// === Glow Effect for Hotspots ===
+function generateGlowTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const context = canvas.getContext('2d');
+  const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+  gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
+  gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.2)');
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(canvas);
+}
+
+const glowMaterial = new THREE.SpriteMaterial({
+  map: generateGlowTexture(),
+  color: 0xffffff,
+  transparent: true,
+  opacity: 0,
+  depthTest: false,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending
+});
+const glowSprite = new THREE.Sprite(glowMaterial);
+glowSprite.scale.set(0.05, 0.05, 0.05);
+glowSprite.renderOrder = 1000; // Ensure it renders on top of everything, similar to the hotspots
+scene.add(glowSprite); // We'll move this to the active hotspot position
+
+let hoveredHotspot = null;
+let targetGlowOpacity = 0;
+
+window.addEventListener('pointermove', (event) => {
+  if (!uiFadedIn) return;
+
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(interactables);
+
+  // Check for Cat intersection (for cursor change)
+  let isHoveringCat = false;
+  if (catHitSphere) {
+    const catIntersects = raycaster.intersectObject(catHitSphere, false);
+    if (catIntersects.length > 0) {
+      isHoveringCat = true;
+    }
+  }
+
+  if (intersects.length > 0) {
+    const hitObj = intersects[0].object;
+    if (hoveredHotspot !== hitObj) {
+      hoveredHotspot = hitObj;
+      renderer.domElement.style.cursor = 'pointer';
+
+      // Move glow sprite to this hotspot's position
+      const container = hitObj.userData.parentGroup;
+      glowSprite.position.copy(container.position);
+      targetGlowOpacity = 0.8;
+    }
+  } else if (isHoveringCat) {
+    renderer.domElement.style.cursor = 'pointer';
+    // Clear hotspot glow if we move from hotspot to cat
+    if (hoveredHotspot) {
+      hoveredHotspot = null;
+      targetGlowOpacity = 0;
+    }
+  } else {
+    if (hoveredHotspot || renderer.domElement.style.cursor === 'pointer') {
+      hoveredHotspot = null;
+      renderer.domElement.style.cursor = 'default';
+      targetGlowOpacity = 0;
+    }
+  }
+});
+
+document.addEventListener('pointerleave', () => {
+  if (hoveredHotspot) {
+    hoveredHotspot = null;
+    renderer.domElement.style.cursor = 'default';
+    targetGlowOpacity = 0;
+  }
+});
+
 // === 点击逻辑 ===
 const mouseDownPos = new THREE.Vector2();
 
@@ -352,6 +435,17 @@ window.addEventListener('pointerup', (event) => {
 
   // Note: Only raycast hotspots here. DragControls handles the model clicking separately.
   const intersects = raycaster.intersectObjects(interactables);
+
+  // Check for Cat Click
+  if (catHitSphere) {
+    const catIntersects = raycaster.intersectObject(catHitSphere, false);
+    if (catIntersects.length > 0) {
+      playClickSound();
+      openDocModal();
+      return;
+    }
+  }
+
   if (intersects.length > 0) {
     const hitObj = intersects[0].object;
     const container = hitObj.userData.parentGroup;
@@ -408,6 +502,74 @@ if (closeBtn) {
   closeBtn.addEventListener('click', () => {
     playClickSound();
     closeInfoBox();
+  });
+}
+
+// === Documentation Modal Logic ===
+const docModal = document.getElementById('doc-modal');
+const closeDocBtn = document.getElementById('close-doc-btn');
+
+function openDocModal() {
+  if (docModal) {
+    docModal.style.display = 'flex';
+    // Trigger reflow
+    docModal.offsetHeight;
+    docModal.style.opacity = '1';
+
+    // GSAP Animations
+    if (window.gsap) {
+      // Select elements inside the modal
+      const title = docModal.querySelector('h2');
+      const elements = docModal.querySelectorAll('h3, p, .image-gallery');
+
+      // Reset state first (in case it was closed and reopened)
+      window.gsap.set([title, ...elements], { opacity: 0, y: 20 });
+
+      // Animate Main Title
+      window.gsap.to(title, {
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        ease: "power3.out",
+        delay: 0.3
+      });
+
+      // Animate Content with Stagger
+      window.gsap.to(elements, {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        stagger: 0.1,
+        ease: "power2.out",
+        delay: 0.5
+      });
+    }
+  }
+}
+
+function closeDocModal() {
+  if (docModal) {
+    docModal.style.opacity = '0';
+    setTimeout(() => {
+      docModal.style.display = 'none';
+      // Optional: Reset for next open if not using GSAP set on open
+    }, 500);
+  }
+}
+
+if (closeDocBtn) {
+  closeDocBtn.addEventListener('click', () => {
+    playClickSound();
+    closeDocModal();
+  });
+}
+
+// Close doc modal when clicking outside content
+if (docModal) {
+  docModal.addEventListener('click', (e) => {
+    if (e.target === docModal) {
+      closeDocModal();
+    }
   });
 }
 
@@ -807,6 +969,12 @@ renderer.setAnimationLoop((time) => {
   if (splatMesh) splatMesh.updateVersion();
 
   controls.update();
+
+  // Update glow opacity
+  if (uiFadedIn) {
+    glowMaterial.opacity += (targetGlowOpacity - glowMaterial.opacity) * 0.1;
+    glowSprite.visible = glowMaterial.opacity > 0.01;
+  }
 
   // 更新坐标显示
   if (coordsDisplay) {
